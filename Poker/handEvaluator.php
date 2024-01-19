@@ -1,113 +1,105 @@
 <?php
 class HandEvaluator
 {
-    public static function evaluate($holeCards, $communityCards)
-    {
-        $allCards = array_merge($holeCards, $communityCards);
+    public static function evaluate($playerCards, $tableCards) {
 
-        usort($allCards, function ($a, $b) {
-            return $b->rank - $a->rank;
-        });
-
-        //straight flush & royal flush
-        $straight = self::checkForStraight($allCards);
-        $flush = self::checkForFlush($allCards);
-
-        if ($straight && $flush) {
-            if(self::checkForRoyalFlush($allCards)) return "Royal Flush";
-            else return "Straight Flush";
+        $hand = array_merge($playerCards, $tableCards);
+    
+        // Royal Flush
+        if (self::isRoyalFlush($hand)) {
+            return 'Royal Flush';
         }
-
-        //four of a kind
-        if (self::checkForNofAKind($allCards, 4)) {
-            return "Four of a Kind";
+    
+        //Straight Flush
+        if (self::isStraightFlush($hand)) {
+            return 'Straight Flush';
         }
-
-        //full house
-        if (self::checkForFullHouse($allCards)) {
-            return "Full House";
+    
+        //Four of a Kind
+        if (self::isFourOfAKind($hand)) {
+            return 'Four of a Kind';
         }
-
-        //flush
-        if ($flush) {
-            return "Flush";
+    
+        //Full House
+        if (self::isFullHouse($hand)) {
+            return 'Full House';
         }
-
-        //straight
-        if ($straight) {
-            return "Straight";
+    
+        //Flush
+        if (self::isFlush($hand)) {
+            return 'Flush';
         }
-
-        //three of a kind
-        if (self::checkForNofAKind($allCards, 3)) {
-            return "Three of a Kind";
+    
+        //Straight
+        if (self::isStraight($hand)) {
+            return 'Straight';
         }
-
-        //two pair
-        if (self::checkForTwoPair($allCards)) {
-            return "Two Pair";
+    
+        //Three of a Kind
+        if (self::isThreeOfAKind($hand)) {
+            return 'Three of a Kind';
         }
-
-        //pair
-        if (self::checkForNofAKind($allCards, 2)) {
-            return "One Pair";
+    
+        //Two Pair
+        if (self::isTwoPair($hand)) {
+            return 'Two Pair';
         }
-
-        // High Card
-        return "High Card";
+    
+        //One Pair
+        if (self::isOnePair($hand)) {
+            return 'One Pair';
+        }
+    
+        //High Card
+        return 'High Card';
     }
-
-    private static function checkForRoyalFlush($cards){
-        return min(array_unique(array_column($cards, 'rank'))) == 10;
-
+    
+    private static function isRoyalFlush($hand) {
+        return self::isStraightFlush($hand) && $hand[0]['rank'] == '10';
     }
-
-    private static function checkForStraight($cards)
-    {
-        $uniqueRanks = array_unique(array_column($cards, 'rank'));
-        sort($uniqueRanks);
-
-        $straight = false;
-        $consecutive = 0;
-
-        foreach ($uniqueRanks as $index => $rank) {
-            if (isset($uniqueRanks[$index + 1]) && $uniqueRanks[$index + 1] == $rank - 1) {
-                $consecutive++;
-                if ($consecutive == 4) {
-                    $straight = true;
-                    break;
-                }
-            } else {
-                $consecutive = 0;
-            }
-        }
-
-        return $straight;
+    
+    private static function isStraightFlush($hand) {
+        return self::isFlush($hand) && self::isStraight($hand);
     }
-
-    private static function checkForFlush($cards)
-    {
-        return in_array(5, array_count_values(array_column($cards, 'suit')));
+    
+    private static function isFourOfAKind($hand) {
+        $counts = array_count_values(array_column($hand, 'rank'));
+        return in_array(4, $counts);
     }
-
-    private static function checkForNofAKind($cards, $n)
-    {
-        return in_array($n, array_count_values(array_column($cards, 'rank')));
+    
+    private static function isFullHouse($hand) {
+        $counts = array_count_values(array_column($hand, 'rank'));
+        return in_array(3, $counts) && in_array(2, $counts);
     }
-
-    private static function checkForFullHouse($cards)
-    {
-        $rankCounts = array_count_values(array_column($cards, 'rank'));
-        return in_array(3, $rankCounts) && in_array(2, $rankCounts);
+    
+    private static function isFlush($hand) {
+        $suits = array_unique(array_column($hand, 'suit'));
+        return count($suits) == 1;
     }
-
-    private static function checkForTwoPair($cards)
-    {
-        $pairs = array_filter(array_count_values(array_column($cards, 'rank')), function ($count) {
+    
+    private static function isStraight($hand) {
+        $ranks = array_unique(array_column($hand, 'rank'));
+        $min = min($ranks);
+        $max = max($ranks);
+        return ($max - $min) == 4 && count($ranks) == 5;
+    }
+    
+    private static function isThreeOfAKind($hand) {
+        $counts = array_count_values(array_column($hand, 'rank'));
+        return in_array(3, $counts);
+    }
+    
+    private static function isTwoPair($hand) {
+        $counts = array_count_values(array_column($hand, 'rank'));
+        $pairs = array_filter($counts, function ($count) {
             return $count == 2;
         });
-
         return count($pairs) == 2;
+    }
+    
+    private static function isOnePair($hand) {
+        $counts = array_count_values(array_column($hand, 'rank'));
+        return in_array(2, $counts);
     }
 } 
 ?>

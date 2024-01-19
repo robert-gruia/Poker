@@ -29,8 +29,6 @@
     .carta img {
         width: 160px;
         height: 240px;
-        /*border: 2px solid #333;
-        border-radius: 8px;*/
         margin-right: 5px;
     }
 
@@ -62,8 +60,6 @@
     .carta img {
         width: 160px;
         height: 240px;
-        /*border: 2px solid #333;
-        border-radius: 8px;*/
         margin-right: 5px;
     }
 
@@ -93,23 +89,35 @@
                 $suit = "f";
             else if ($i == 3)
                 $suit = "p";
-            array_push($deck, new Card($j, $suit));
+            array_push($deck, new Card($j, $suit, "carte/back_r.svg"));
+            array_push($deck, new Card($j, $suit, "carte/back_b.svg"));
         }
     }
     shuffle($deck);
+    //card distribution to players
     $bancoCards = array();
+    for($i = 0; $i < 5; $i++){
+        array_push($bancoCards, array_pop($deck));
+    }
     $gCards = array();
+    for($i = 0; $i < 4; $i++){
+        $gCards[$i] = array(array_pop($deck));
+    }
+    for($i = 0; $i < 4; $i++){
+        array_push($gCards[$i], array_pop($deck));
+    }
+    
+    
     ?>
     <div class="game">
 
         <div class="banco">
             <div class="mazzo">
-                <img src="carte/back_b.svg" alt="">
+                <img src=<?php echo end($deck)->cardBack_Path?>>
             </div>
             <?php
             for ($i = 0; $i < 5; $i++) {
-                $card = array_pop($deck);
-                array_push($bancoCards, $card);
+                $card = $bancoCards[$i];
                 ?>
                 <div class="carta">
                     <img src=<?= $card->img_Path ?> alt="">
@@ -120,17 +128,16 @@
         </div>
         <div class="giocatori">
             <?php
-            for ($i = 1; $i <= 4; $i++) {
+            for ($i = 0; $i < 4; $i++) {
                 ?>
                 <div class="giocatore">
                     <h2>Giocatore
-                        <?= $i ?>
+                        <?= $i + 1 ?>
                     </h2>
                     <div class="carte">
                         <?php
                         for ($j = 0; $j < 2; $j++) {
-                            $card = array_pop($deck);
-                            array_push($gCards, $card);
+                            $card = $gCards[$i][$j];
                             ?>
                             <div class="carta">
                                 <img src=<?= $card->img_Path ?> alt="">
@@ -140,12 +147,10 @@
                         ?>
                     </div>
                     <h3>
-                        <?= HandEvaluator::evaluate($gCards, $bancoCards) ?>
+                        <?= HandEvaluator::evaluate($gCards[$i], $bancoCards) ?>
                     </h3>
-                    <?php $gCards = array(); ?>
+                    
                 </div>
-
-
                 <?php
             }
             ?>
