@@ -10,7 +10,7 @@ class Card
     {
         $this->rank = $rank;
         $this->suit = $suit;
-        $this->backColor = $cardBack_Path;
+        $this->cardBack_Path = $cardBack_Path;
         $this->img_Path = "carte/" . $rank . $suit . ".svg";
     }
 }

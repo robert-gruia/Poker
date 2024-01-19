@@ -15,49 +15,49 @@
         justify-content: center;
     }
 
-    .banco {
+    .table {
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 20px;
     }
 
-    .mazzo {
+    .deck {
         margin-right: 20px;
     }
 
-    .carta img {
+    .card img {
         width: 160px;
         height: 240px;
         margin-right: 5px;
     }
 
-    .mazzo img {
+    .deck img {
         padding-right: 20px;
         width: 160px;
         height: 240px;
     }
 
-    .giocatori {
+    .players {
         display: flex;
         justify-content: space-around;
         margin-top: 20px;
     }
 
-    .giocatore {
+    .player {
         text-align: center;
     }
 
-    .giocatore h2 {
+    .player h2 {
         margin-bottom: 10px;
     }
 
-    .carte {
+    .cards {
         display: flex;
         justify-content: center;
     }
 
-    .carta img {
+    .card img {
         width: 160px;
         height: 240px;
         margin-right: 5px;
@@ -65,8 +65,8 @@
 
     html,
     body,
-    .banco,
-    .giocatori {
+    .table,
+    .players {
         height: 100%;
     }
 </style>
@@ -95,9 +95,9 @@
     }
     shuffle($deck);
     //card distribution to players
-    $bancoCards = array();
+    $tableCards = array();
     for($i = 0; $i < 5; $i++){
-        array_push($bancoCards, array_pop($deck));
+        array_push($tableCards, array_pop($deck));
     }
     $gCards = array();
     for($i = 0; $i < 4; $i++){
@@ -111,35 +111,35 @@
     ?>
     <div class="game">
 
-        <div class="banco">
-            <div class="mazzo">
-                <img src=<?php echo end($deck)->cardBack_Path?>>
+        <div class="table">
+            <div class="deck">
+                <img src=<?php echo end($deck)->cardBack_Path;?>>
             </div>
             <?php
             for ($i = 0; $i < 5; $i++) {
-                $card = $bancoCards[$i];
+                $card = $tableCards[$i];
                 ?>
-                <div class="carta">
+                <div class="card">
                     <img src=<?= $card->img_Path ?> alt="">
                 </div>
                 <?php
             }
             ?>
         </div>
-        <div class="giocatori">
+        <div class="players">
             <?php
             for ($i = 0; $i < 4; $i++) {
                 ?>
-                <div class="giocatore">
-                    <h2>Giocatore
+                <div class="player">
+                    <h2>Player
                         <?= $i + 1 ?>
                     </h2>
-                    <div class="carte">
+                    <div class="cards">
                         <?php
                         for ($j = 0; $j < 2; $j++) {
                             $card = $gCards[$i][$j];
                             ?>
-                            <div class="carta">
+                            <div class="card">
                                 <img src=<?= $card->img_Path ?> alt="">
                             </div>
                             <?php
@@ -147,7 +147,7 @@
                         ?>
                     </div>
                     <h3>
-                        <?= HandEvaluator::evaluate($gCards[$i], $bancoCards) ?>
+                        <?= HandEvaluator::evaluate($gCards[$i], $tableCards) ?>
                     </h3>
                     
                 </div>
