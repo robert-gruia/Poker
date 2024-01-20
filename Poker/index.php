@@ -74,6 +74,7 @@
 <body>
     <?php
     require_once("card.php");
+    require_once("player.php");
     require_once("handEvaluator.php");
 
     //deck creation
@@ -96,24 +97,26 @@
     shuffle($deck);
     //card distribution to players
     $tableCards = array();
-    for($i = 0; $i < 5; $i++){
+    for ($i = 0; $i < 5; $i++) {
         array_push($tableCards, array_pop($deck));
     }
     $gCards = array();
-    for($i = 0; $i < 4; $i++){
-        $gCards[$i] = array(array_pop($deck));
+    for ($i = 0; $i < 4; $i++) {
+        $gCards[$i] = new Player();
+        array_push($gCards[$i]->hand, array_pop($deck));
     }
-    for($i = 0; $i < 4; $i++){
-        array_push($gCards[$i], array_pop($deck));
+    for ($i = 0; $i < 4; $i++) {
+        array_push($gCards[$i]->hand, array_pop($deck));
+        $gCards[$i]->finalValues = HandEvaluator::evaluate($gCards[$i]->hand, $tableCards);
     }
-    
-    
+
+
     ?>
     <div class="game">
 
         <div class="table">
             <div class="deck">
-                <img src=<?php echo end($deck)->cardBack_Path;?>>
+                <img src=<?php echo end($deck)->cardBack_Path; ?>>
             </div>
             <?php
             for ($i = 0; $i < 5; $i++) {
@@ -137,7 +140,7 @@
                     <div class="cards">
                         <?php
                         for ($j = 0; $j < 2; $j++) {
-                            $card = $gCards[$i][$j];
+                            $card = $gCards[$i]->hand[$j];
                             ?>
                             <div class="card">
                                 <img src=<?= $card->img_Path ?> alt="">
@@ -147,9 +150,18 @@
                         ?>
                     </div>
                     <h3>
-                        <?= HandEvaluator::evaluate($gCards[$i], $tableCards) ?>
+                        <?php
+                        echo $gCards[$i]->finalValues[0];
+                        ?>
                     </h3>
-                    
+                    <h3>
+                        <?php
+                        if ($gCards[$i]->finalValues[1] == max(array_column(array_column($gCards, 'finalValues'), '1'))) {
+                            echo "\n\rWinner";
+                        }
+                        ?>
+                    </h3>
+
                 </div>
                 <?php
             }
