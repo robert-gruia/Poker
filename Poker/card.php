@@ -13,5 +13,6 @@ class Card
         $this->cardBack_Path = $cardBack_Path;
         $this->img_Path = "carte/" . $rank . $suit . ".svg";
     }
+
 }
 ?>

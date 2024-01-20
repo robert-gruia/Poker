@@ -13,7 +13,7 @@ class HandEvaluator
         }
 
         //Straight Flush
-        if (self::isStraightFlush($hand)) {
+        if (self::isStraightFlush($hand)[0]) {
             return array('Straight Flush', 8);
         }
 
@@ -33,7 +33,7 @@ class HandEvaluator
         }
 
         //Straight
-        if (self::isStraight($hand)) {
+        if (self::isStraight($hand)[0]) {
             return array('Straight', 4);
         }
 
@@ -58,12 +58,14 @@ class HandEvaluator
 
     private static function isRoyalFlush($hand)
     {
-        return self::isStraightFlush($hand) && $hand[0]['rank'] == '10';
+        $royal = self::isStraightFlush($hand);
+        return $royal[0] && $royal[1] == '10';
     }
 
     private static function isStraightFlush($hand)
     {
-        return self::isFlush($hand) && self::isStraight($hand);
+        $straight = self::isStraight($hand);
+        return array(self::isFlush($hand) && $straight[0], $straight[1]);
     }
 
     private static function isFourOfAKind($hand)
@@ -87,9 +89,7 @@ class HandEvaluator
     private static function isStraight($hand)
     {
         $ranks = array_unique(array_column($hand, 'rank'));
-        $min = min($ranks);
-        $max = max($ranks);
-        return ($max - $min) == 4 && count($ranks) == 5;
+        return self::isConsecutive($ranks);
     }
 
     private static function isThreeOfAKind($hand)
@@ -111,6 +111,19 @@ class HandEvaluator
     {
         $counts = array_count_values(array_column($hand, 'rank'));
         return in_array(2, $counts);
+    }
+
+    private static function isConsecutive($hand)
+    {
+        sort($hand);
+        for ($i = 0; $i < count($hand) - 4; $i++) {
+            if ($hand[$i] + 1 == $hand[$i + 1] && $hand[$i] + 2 == $hand[$i + 2] && $hand[$i] + 3 == $hand[$i + 3] && $hand[$i] + 4 == $hand[$i + 4]) {
+                return array(true, $hand[$i]);
+            }
+
+        }
+        return array(false, null);
+
     }
 }
 ?>

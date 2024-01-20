@@ -102,7 +102,7 @@
     }
     $gCards = array();
     for ($i = 0; $i < 4; $i++) {
-        $gCards[$i] = new Player();
+        $gCards[$i] = new Player('Player ' . $i);
         array_push($gCards[$i]->hand, array_pop($deck));
     }
     for ($i = 0; $i < 4; $i++) {
