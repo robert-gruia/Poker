@@ -1,129 +1,164 @@
 <?php
+namespace Gruia\Poker;
 
 class HandEvaluator
 {
     public static function evaluate($playerCards, $tableCards)
     {
 
-        $hand = array_merge($playerCards, $tableCards);
+        $cards = array_merge($playerCards, $tableCards);
+        $strength = self::checkHand($cards);
+        return $strength;
+    }
 
-        // Royal Flush
-        if (self::isRoyalFlush($hand)) {
-            return array('Royal Flush', 9);
+    private static function checkHand($cards)
+    {
+        $arr_ranks = array_count_values(array_column($cards, 'rank'));
+        $vals_ranks = array_values($arr_ranks);
+        $ranks = array_keys($arr_ranks);
+        rsort($vals_ranks);
+        rsort($ranks);
+        $arr_suits = array_count_values(array_column($cards, 'suit'));
+        $vals_suits = array_values($arr_suits);
+        $suits = array_keys($arr_suits);
+        rsort($vals_suits);
+        rsort($suits);
+
+        //Based on suit
+        $consecutive = self::isConsecutive($cards);
+        if (is_array($consecutive)) {
+            if (count(array_count_values(array_column($consecutive, 'suit'))) == 1) {
+                if (min(array_column($consecutive, 'rank')) == 10) {
+                    //Royal Flush
+                    return array(
+                        "strength" => 9,
+                        "cardValue" => array_sum($consecutive),
+                        "kickerValue" => 0
+                    );
+                } else {
+                    //Straight Flush
+                    return array(
+                        "strength" => 8,
+                        "cardValue" => array_sum($consecutive),
+                        "kickerValue" => 0
+                    );
+                }
+
+            }
+            //Straight
+            return array(
+                "strength" => 4,
+                "cardValue" => array_sum($consecutive),
+                "kickerValue" => 0
+            );
+        } else if ($vals_suits[0] >= 5) {
+            $suit = array_search($vals_suits[0],$arr_suits);
+            $suits = array_map(function($card) use ($suit){return $card->suit == $suit;}, $cards);
+            $suits = array_slice($suits, 0, 5, true);
+            //Flush
+            return array(
+                "strength" => 5,
+                "cardValue" => array_sum($suits),
+                "kickerValue" => 0
+            );
         }
-
-        //Straight Flush
-        if (self::isStraightFlush($hand)[0]) {
-            return array('Straight Flush', 8);
-        }
-
+        //Based on rank
         //Four of a Kind
-        if (self::isFourOfAKind($hand)) {
-            return array('Four of a Kind', 7);
-        }
+        else if ($vals_ranks[0] >= 4) {
+            $usedRanks = array_search($vals_ranks[0], $arr_ranks);
+            return array(
+                "strength" => 7,
+                "cardValue" => $usedRanks,
+                "kickerValue" => self::getKickerValue($ranks, $usedRanks)
+            );
+        } else if ($vals_ranks[0] == 3) {
 
-        //Full House
-        if (self::isFullHouse($hand)) {
-            return array('Full House', 6);
-        }
-
-        //Flush
-        if (self::isFlush($hand)) {
-            return array('Flush', 5);
-        }
-
-        //Straight
-        if (self::isStraight($hand)[0]) {
-            return array('Straight', 4);
-        }
-
-        //Three of a Kind
-        if (self::isThreeOfAKind($hand)) {
-            return array('Three of a Kind', 3);
+            //Full House(no kickers)
+            if ($vals_ranks[1] == 2) {
+                return array(
+                    "strength" => 6,
+                    "cardValue" => array_search($vals_ranks[0], $arr_ranks) + array_search($vals_ranks[1], $arr_ranks),
+                    "kickerValue" => 0
+                );
+            }
+            //Three of a Kind
+            else {
+                $usedRanks = array(array_search($vals_ranks[0], $arr_ranks));
+                $kickerVal = 0;
+                for ($i = 0; $i < 5 - $vals_ranks[0]; $i++) {
+                    array_push($usedRanks, self::getKickerValue($ranks, $usedRanks));
+                    $kickerVal += end($usedRanks);
+                }
+                return array(
+                    "strength" => 3,
+                    "cardValue" => array_search($vals_ranks[0], $arr_ranks),
+                    "kickerValue" => $kickerVal
+                );
+            }
         }
 
         //Two Pair
-        if (self::isTwoPair($hand)) {
-            return array('Two Pair', 2);
+        else if ($vals_ranks[0] == 2 && $vals_ranks[1] == 2) {
+            $usedRanks = array(array_search($vals_ranks[0], $arr_ranks), array_search($vals_ranks[1], $arr_ranks));
+            return array(
+                "strength" => 2,
+                "cardValue" => array_search($vals_ranks[0], $arr_ranks) + array_search($vals_ranks[1], $arr_ranks),
+                "kickerValue" => self::getKickerValue($ranks, $usedRanks)
+            );
         }
 
         //One Pair
-        if (self::isOnePair($hand)) {
-            return array('One Pair', 1);
+        else if ($vals_ranks[0] == 2) {
+            $usedRanks = array(array_search($vals_ranks[0], $arr_ranks));
+            $kickerVal = 0;
+            for ($i = 0; $i < 5 - $vals_ranks[0]; $i++) {
+                array_push($usedRanks, self::getKickerValue($ranks, $usedRanks));
+                $kickerVal += end($usedRanks);
+            }
+            return array(
+                "strength" => 1,
+                "cardValue" => array_search($vals_ranks[0], $arr_ranks),
+                "kickerValue" => $kickerVal
+            );
+        }
+        else{
+            $vals = array_column($cards, 'rank');
+            rsort($vals);
+            return array(
+                "strength" => 0,
+                "cardValue" => array_shift($vals),
+                "kickerValue" => array_sum($vals)
+            );
         }
 
-        //High Card
-        return array('High Card', 0);
     }
 
-    private static function isRoyalFlush($hand)
-    {
-        $royal = self::isStraightFlush($hand);
-        return $royal[0] && $royal[1] == '10';
-    }
 
-    private static function isStraightFlush($hand)
-    {
-        $straight = self::isStraight($hand);
-        return array(self::isFlush($hand) && $straight[0], $straight[1]);
-    }
 
-    private static function isFourOfAKind($hand)
+    private static function getKickerValue($ranks, $excludedRanks)
     {
-        $counts = array_count_values(array_column($hand, 'rank'));
-        return in_array(4, $counts);
-    }
-
-    private static function isFullHouse($hand)
-    {
-        $counts = array_count_values(array_column($hand, 'rank'));
-        return in_array(3, $counts) && in_array(2, $counts);
-    }
-
-    private static function isFlush($hand)
-    {
-        $suits = array_unique(array_column($hand, 'suit'));
-        return count($suits) == 1;
-    }
-
-    private static function isStraight($hand)
-    {
-        $ranks = array_unique(array_column($hand, 'rank'));
-        return self::isConsecutive($ranks);
-    }
-
-    private static function isThreeOfAKind($hand)
-    {
-        $counts = array_count_values(array_column($hand, 'rank'));
-        return in_array(3, $counts);
-    }
-
-    private static function isTwoPair($hand)
-    {
-        $counts = array_count_values(array_column($hand, 'rank'));
-        $pairs = array_filter($counts, function ($count) {
-            return $count >= 2;
-        });
-        return count($pairs) >= 2;
-    }
-
-    private static function isOnePair($hand)
-    {
-        $counts = array_count_values(array_column($hand, 'rank'));
-        return in_array(2, $counts);
-    }
-
-    private static function isConsecutive($hand)
-    {
-        sort($hand);
-        for ($i = 0; $i < count($hand) - 4; $i++) {
-            if ($hand[$i] + 1 == $hand[$i + 1] && $hand[$i] + 2 == $hand[$i + 2] && $hand[$i] + 3 == $hand[$i + 3] && $hand[$i] + 4 == $hand[$i + 4]) {
-                return array(true, $hand[$i]);
+        for ($i = 0; $i < count($ranks); $i++) {
+            if (!is_array($excludedRanks)) {
+                if ($ranks[$i] != $excludedRanks)
+                    return $ranks[$i];
+            } else {
+                if (!in_array($ranks[$i], $excludedRanks))
+                    return $ranks[$i];
             }
 
         }
-        return array(false, null);
-
     }
+
+    private static function isConsecutive($arr_ranks)
+    {
+        sort($arr_ranks);
+        for ($i = 0; $i < count($arr_ranks) - 4; $i++) {
+            if ($arr_ranks[$i]->rank + 1 == $arr_ranks[$i + 1]->rank && $arr_ranks[$i]->rank + 2 == $arr_ranks[$i + 2]->rank && $arr_ranks[$i]->rank + 3 == $arr_ranks[$i + 3]->rank && $arr_ranks[$i]->rank + 4 == $arr_ranks[$i + 4]->rank)
+                return array($arr_ranks[$i], $arr_ranks[$i + 1], $arr_ranks[$i + 2], $arr_ranks[$i + 3], $arr_ranks[$i + 4]);
+        }
+        return false;
+    }
+
+
 }
 ?>

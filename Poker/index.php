@@ -1,3 +1,5 @@
+<?php
+namespace Gruia\Poker; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -75,48 +77,29 @@
     <?php
     require_once("card.php");
     require_once("player.php");
+    require_once("deck.php");
+    require_once("hand.php");
     require_once("handEvaluator.php");
-
     //deck creation
-    $deck = array();
-    for ($i = 0; $i < 4; $i++) {
-        for ($j = 2; $j <= 14; $j++) {
-            $suit = "";
-            if ($i == 0)
-                $suit = "c";
-            else if ($i == 1)
-                $suit = "q";
-            else if ($i == 2)
-                $suit = "f";
-            else if ($i == 3)
-                $suit = "p";
-            array_push($deck, new Card($j, $suit, "carte/back_r.svg"));
-            array_push($deck, new Card($j, $suit, "carte/back_b.svg"));
-        }
-    }
-    shuffle($deck);
+    $deck = Deck::createDoubleDeck();
+    $deck->shuffle();
     //card distribution to players
     $tableCards = array();
     for ($i = 0; $i < 5; $i++) {
-        array_push($tableCards, array_pop($deck));
+        array_push($tableCards, $deck->takeCard());
     }
-    $gCards = array();
-    for ($i = 0; $i < 4; $i++) {
-        $gCards[$i] = new Player('Player ' . $i);
-        array_push($gCards[$i]->hand, array_pop($deck));
+    $players = array(new Player("Player 1"), new Player("Player 2"), new Player("Player 3"), new Player("Player 4"));
+    for ($i = 0; $i < 2; $i++) {
+        for ($j = 0; $j < count($players); $j++) {
+            $players[$j]->getHand()->addCard($deck->takeCard());
+        }
     }
-    for ($i = 0; $i < 4; $i++) {
-        array_push($gCards[$i]->hand, array_pop($deck));
-        $gCards[$i]->finalValues = HandEvaluator::evaluate($gCards[$i]->hand, $tableCards);
-    }
-
-
     ?>
     <div class="game">
 
         <div class="table">
             <div class="deck">
-                <img src=<?php echo end($deck)->cardBack_Path; ?>>
+                <img src=<?php echo $deck->cardBack(); ?>>
             </div>
             <?php
             for ($i = 0; $i < 5; $i++) {
@@ -134,13 +117,13 @@
             for ($i = 0; $i < 4; $i++) {
                 ?>
                 <div class="player">
-                    <h2>Player
-                        <?= $i + 1 ?>
+                    <h2>
+                        <?= $players[$i]->name ?>
                     </h2>
                     <div class="cards">
                         <?php
                         for ($j = 0; $j < 2; $j++) {
-                            $card = $gCards[$i]->hand[$j];
+                            $card = $players[$i]->getHand()->getCards()[$j];
                             ?>
                             <div class="card">
                                 <img src=<?= $card->img_Path ?> alt="">
@@ -151,14 +134,19 @@
                     </div>
                     <h3>
                         <?php
-                        echo $gCards[$i]->finalValues[0];
+                            $players[$i]->getHand()->checkHand($tableCards);
+                            $playerHandVals = $players[$i]->getHand()->getHandVals();
+                            echo "Hand Type: ". Hand::getHandType($playerHandVals['strength']);
                         ?>
                     </h3>
                     <h3>
                         <?php
-                        if ($gCards[$i]->finalValues[1] == max(array_column(array_column($gCards, 'finalValues'), '1'))) {
-                            echo "\n\rWinner";
-                        }
+                        echo "Kicker: ". $playerHandVals['kickerValue'];
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo "Card Value: ". $playerHandVals['cardValue'];
                         ?>
                     </h3>
 

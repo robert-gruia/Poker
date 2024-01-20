@@ -1,4 +1,5 @@
 <?php
+namespace Gruia\Poker;
 class Card
 {
     public $rank;
@@ -6,12 +7,12 @@ class Card
     public $img_Path;
     public $cardBack_Path;
 
-    function __construct($rank, $suit, $cardBack_Path)
+    function __construct($rank = null, $suit = null, $cardBack_Path)
     {
         $this->rank = $rank;
         $this->suit = $suit;
         $this->cardBack_Path = $cardBack_Path;
-        $this->img_Path = "carte/" . $rank . $suit . ".svg";
+        $this->img_Path = "cards/" . $rank . $suit . ".svg";
     }
 
 }
