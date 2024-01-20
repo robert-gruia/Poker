@@ -141,14 +141,15 @@ namespace Gruia\Poker; ?>
                     </h3>
                     <h3>
                         <?php
-                        echo "Kicker: ". $playerHandVals['kickerValue'];
+                        echo "Card Value: ". $playerHandVals['cardValue'];
                         ?>
                     </h3>
                     <h3>
                         <?php
-                        echo "Card Value: ". $playerHandVals['cardValue'];
+                        echo "Kicker: ". $playerHandVals['kickerValue'];
                         ?>
                     </h3>
+                    
 
                 </div>
                 <?php
