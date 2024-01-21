@@ -5,6 +5,7 @@ class Hand{
     private $cards = array();
     private $cardLimit;
     private $handVals;
+    private $winner = false;
     public static $handTypes = [
         'High Card',
         'One Pair',
@@ -42,6 +43,14 @@ class Hand{
 
     public function checkHand($tableCards){
         $this->handVals = HandEvaluator::evaluate($this->cards, $tableCards);
+    }
+
+    public function getIfWinner(){
+        return $this->winner;
+    }
+
+    public function setWinner($winner){
+        $this->winner = $winner;
     }
 } 
 ?>

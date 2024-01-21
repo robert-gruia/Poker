@@ -52,13 +52,17 @@ class HandEvaluator
                 "kickerValue" => 0
             );
         } else if ($vals_suits[0] >= 5) {
-            $suit = array_search($vals_suits[0],$arr_suits);
-            $suits = array_map(function($card) use ($suit){return $card->suit == $suit;}, $cards);
-            $suits = array_slice($suits, 0, 5, true);
+            $suit = array_search($vals_suits[0], $arr_suits);
+            $suitCards = array();
+            for ($i = 0; $i < count($cards); $i++) {
+                if ($cards[$i]->suit == $suit)
+                    array_push($suitCards, $cards[$i]->rank);
+
+            }
             //Flush
             return array(
                 "strength" => 5,
-                "cardValue" => array_sum($suits),
+                "cardValue" => array_sum($suitCards),
                 "kickerValue" => 0
             );
         }
@@ -100,9 +104,11 @@ class HandEvaluator
         //Two Pair
         else if ($vals_ranks[0] == 2 && $vals_ranks[1] == 2) {
             $usedRanks = array(array_search($vals_ranks[0], $arr_ranks), array_search($vals_ranks[1], $arr_ranks));
+            $cardValues = array_keys($arr_ranks, 2);
+            rsort($cardValues);
             return array(
                 "strength" => 2,
-                "cardValue" => array_search($vals_ranks[0], $arr_ranks) + array_search($vals_ranks[1], $arr_ranks),
+                "cardValue" => $cardValues[0] + $cardValues[1],
                 "kickerValue" => self::getKickerValue($ranks, $usedRanks)
             );
         }
@@ -120,8 +126,7 @@ class HandEvaluator
                 "cardValue" => array_search($vals_ranks[0], $arr_ranks),
                 "kickerValue" => $kickerVal
             );
-        }
-        else{
+        } else {
             $vals = array_column($cards, 'rank');
             rsort($vals);
             return array(
@@ -159,6 +164,49 @@ class HandEvaluator
         return false;
     }
 
+
+    //returns index of the winner
+    public static function winnerHands($players)
+    {
+        $winners = array(0);
+        for ($i = 1; $i < count($players); $i++) {
+            $comparisonResult = self::compareHands(
+                $players[end($winners)]->getHand()->getHandVals(),
+                $players[$i]->getHand()->getHandVals()
+            );
+
+            if($comparisonResult == 0){
+                $winners = array($i);
+            }
+            else if($comparisonResult == -1){
+                $winners[] = $i;
+            }
+        }
+        return array_unique($winners);
+    }
+
+    //return 1 if first wins, returns 0 if second wins, returns -1 if equivalent
+    private static function compareHands($p1HandVals, $p2HandVals)
+    {
+        if ($p1HandVals['strength'] > $p2HandVals['strength'])
+            return 1;
+        else if ($p1HandVals['strength'] < $p2HandVals['strength'])
+            return 0;
+        else {
+            if ($p1HandVals['cardValue'] > $p2HandVals['cardValue'])
+                return 1;
+            if ($p1HandVals['cardValue'] < $p2HandVals['cardValue'])
+                return 0;
+            else {
+                if ($p1HandVals['kickerValue'] > $p2HandVals['kickerValue'])
+                    return 1;
+                if ($p1HandVals['kickerValue'] < $p2HandVals['kickerValue'])
+                    return 0;
+                else
+                    return -1;
+            }
+        }
+    }
 
 }
 ?>

@@ -1,5 +1,4 @@
-<?php
-namespace Gruia\Poker; ?>
+<?php namespace Gruia\Poker; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -94,6 +93,17 @@ namespace Gruia\Poker; ?>
             $players[$j]->getHand()->addCard($deck->takeCard());
         }
     }
+    for ($i = 0; $i < count($players); $i++) {
+        $players[$i]->getHand()->checkHand($tableCards);
+    }
+    $winners = HandEvaluator::winnerHands($players);
+    $winners = implode(",", $winners);
+    $winners = explode(",", $winners); 
+    for ($i = 0; $i < count($winners); $i++) {
+        $ind = $winners[$i];
+        $players[$ind]->getHand()->setWinner(true);
+    }
+
     ?>
     <div class="game">
 
@@ -134,7 +144,7 @@ namespace Gruia\Poker; ?>
                     </div>
                     <h3>
                         <?php
-                            $players[$i]->getHand()->checkHand($tableCards);
+                           
                             $playerHandVals = $players[$i]->getHand()->getHandVals();
                             echo "Hand Type: ". Hand::getHandType($playerHandVals['strength']);
                         ?>
@@ -149,8 +159,11 @@ namespace Gruia\Poker; ?>
                         echo "Kicker: ". $playerHandVals['kickerValue'];
                         ?>
                     </h3>
-                    
-
+                    <h3>
+                        <?php
+                        echo ($players[$i]->getHand()->getIfWinner()) ? "Winner" : "";
+                        ?>
+                    </h3>
                 </div>
                 <?php
             }
