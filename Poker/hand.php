@@ -8,7 +8,7 @@ class Hand{
     private $winner = false;
     public static $handTypes = [
         'High Card',
-        'One Pair',
+        'Pair',
         'Two Pair',
         'Three of a Kind',
         'Straight',
