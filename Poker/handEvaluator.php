@@ -1,144 +1,139 @@
 <?php
 namespace Gruia\Poker;
 
+error_reporting(E_ALL & ~E_WARNING);
+
 class HandEvaluator
 {
 
     public static function evaluate($playerCards, $tableCards)
     {
         $cards = array_merge($playerCards, $tableCards);
-        $cards_ranks = array_column($cards, "rank");
-        $handValues = array(
-            "strength" => 0,
-            "cardValue" => 0,
-            "kickerValue" => 0
-        );
+        usort($cards, function ($a, $b) {
+            return $b->rank - $a->rank;
+        });
 
-
-        //royal flush
-        if (self::isStraightFlush($cards, true) !== null) {
-            $handValues['strength'] = 9;
-            $cardValues = array_column(self::isStraightFlush($cards, true), 'rank');
-            $handValues['cardValue'] = array_sum($cardValues);
+        $rankCounts = array();
+        $suitCounts = array();
+        foreach ($cards as $card) {
+            if (!isset($rankCounts[$card->rank])) {
+                $rankCounts[$card->rank] = 0;
+            }
+            if (!isset($suitCounts[$card->suit])) {
+                $suitCounts[$card->suit] = 0;
+            }
+            $rankCounts[$card->rank]++;
+            $suitCounts[$card->suit]++;
         }
 
-        //straight flush
-        else if (self::isStraightFlush($cards, false) !== null) {
-            $handValues['strength'] = 8;
-            $cardValues = array_column(self::isStraightFlush($cards, false), 'rank');
-            $handValues['cardValue'] = array_sum($cardValues);
-        }
+        // Check for poker hand types
+        $isFlush = max($suitCounts) >= 5;
+        $isStraight = self::isStraight($rankCounts) !== false;
+        $rankCountValues = array_count_values($rankCounts);
+        $isFourOfAKind = isset($rankCountValues[4]);
+        $isThreeOfAKind = isset($rankCountValues[3]);
+        $isPair = isset($rankCountValues[2]);
+        $isTwoPair = isset($rankCountValues[2]) && array_keys($rankCountValues, 2)[0] >= 2;
+        $isFullHouse = $isThreeOfAKind && $isPair;
 
+        // Determine hand type
+        $handType = 0;
+        $handValue = 0;
+        $kickers = 0;
         //four of a kind
-        else if (self::findLargestRepeatingElement($cards_ranks, 4) !== null) {
-            $handValues['strength'] = 7;
-            $cardValue = self::findLargestRepeatingElement($cards_ranks, 3);
-            $handValues["cardValue"] = $cardValue;
-            $handValues['kickerValue'] = self::findExclusiveLargestElement($cards_ranks, array($cardValue));
-        }
-        //full house
-        else if (self::findLargestRepeatingElement($cards_ranks, 3) !== null && self::findLargestRepeatingElement($cards_ranks, 2) !== null) {
-            $handValues['strength'] = 6;
-            $handValues["cardValue"] = self::findLargestRepeatingElement($cards_ranks, 3) + self::findLargestRepeatingElement($cards_ranks, 2);
-        }
-        //flush
-        else if (self::findLargestSameSuit($cards) !== null) {
-            $handValues['strength'] = 5;
-            $sameSuitCards = self::findLargestSameSuit($cards);
-            $handValues['cardValue'] = array_sum(array_column($sameSuitCards, 'rank'));
-        }
-        //straight
-        else if (self::isStraight($cards) !== null) {
-            $handValues['strength'] = 4;
-            $straightCards = self::isStraight($cards);
-            $handValues['cardValue'] = array_sum(array_column($straightCards, 'rank'));
-        }
-        //three of a kind
-        else if (self::findLargestRepeatingElement($cards_ranks, 3) !== null) {
-            $handValues['strength'] = 3;
-            $handValues["cardValue"] = self::findLargestRepeatingElement($cards_ranks, 3);
-            $firstKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"]));
-            $secondKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker));
-            $handValues['kickerValue'] = $firstKicker + $secondKicker;
-        }
-        //two pair
-        else if (self::findNLargestRepeatingElements($cards_ranks, 2, 2) !== null) {
-            $handValues['strength'] = 2;
-            $cardValues = self::findNLargestRepeatingElements($cards_ranks, 2, 2);
-            $handValues['cardValue'] = array_sum($cardValues);
-            $handValues['kickerValue'] = self::findExclusiveLargestElement($cards_ranks, $cardValues);
-        }
-        //pair
-        else if (self::findLargestRepeatingElement($cards_ranks, 2) !== null) {
-            $handValues['strength'] = 1;
-            $handValues["cardValue"] = self::findLargestRepeatingElement($cards_ranks, 2);
-            $firstKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"]));
-            $secondKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker));
-            $thirdKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker, $secondKicker));
-            $handValues['kickerValue'] = $firstKicker + $secondKicker + $thirdKicker;
-        }
-        //high card
-        else {
-            $handValues['strength'] = 0;
-            $handValues["cardValue"] = self::findLargestRepeatingElement($cards_ranks, 1);
-            $firstKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"]));
-            $secondKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker));
-            $thirdKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker, $secondKicker));
-            $fourthKicker = self::findExclusiveLargestElement($cards_ranks, array($handValues["cardValue"], $firstKicker, $secondKicker, $thirdKicker));
-            $handValues['kickerValue'] = $firstKicker + $secondKicker + $thirdKicker + $fourthKicker;
-        }
+        if ($isFourOfAKind) {
+            $handType = 7;
+            $usedCard = array_keys($rankCounts, 4);
+            $cards = array_filter($cards, function ($card) use ($usedCard) {
+                return $card->rank != $usedCard[0];
+            });
+            $possibleKickers = array_column($cards, 'rank');
+            rsort($possibleKickers);
+            $kickers = $possibleKickers[0];
+            print_r($usedCard);
+            $handValue = array_sum($usedCard) * 4;
+            //full house
+        } elseif ($isFullHouse) {
+            $handType = 6;
+            $handValue = array_sum(array_keys($rankCounts, 3)) * 3 + array_sum(array_keys($rankCounts, 2)) * 2;
+            //straight flush / royal flush
+        } elseif ($isFlush && $isStraight) {
+            $handType = $handValue == 14 ? 9 : 8;
+            $handValue = array_sum(self::isStraight($rankCounts));
+            //flush
+        } elseif ($isFlush) {
+            $handType = 5;
+            $suit = array_keys($suitCounts, max($suitCounts))[0];
+            $suitsArr = array_filter($cards, function ($card) use ($suit) {
+                return $card->suit == $suit;
+            });
+            rsort($suitsArr);
+            $handValue = $suitsArr[0] + $suitsArr[1] + $suitsArr[2] + $suitsArr[3] + $suitsArr[4];
+            //straight
+        } elseif ($isStraight) {
+            $handType = 4;
+            $handValue = array_sum(self::isStraight($rankCounts));
+            //three of a kind
+        } elseif ($isThreeOfAKind) {
+            $handType = 3;
+            $usedCard = array_keys($rankCounts, 3);
+            $cards = array_filter($cards, function ($card) use ($usedCard) {
+                return $card->rank != $usedCard[0];
+            });
+            $possibleKickers = array_column($cards, 'rank');
+            rsort($possibleKickers);
+            $kickers = $possibleKickers[0] + $possibleKickers[1];
+            $handValue = array_sum($usedCard) * 3;
+            //two pair    
+        } elseif ($isTwoPair) {
+            $handType = 2;
+            $usedCards = array_keys($rankCounts, 2);
+            $cards = array_filter($cards, function ($card) use ($usedCards) {
+                return array_search($card->rank, $usedCards) != false;
+            });
+            $possibleKickers = array_column($cards, 'rank');
+            $kickers = $possibleKickers[0];
+            $handValue = array_sum($usedCards) * 2;
+            //pair    
+        } elseif ($isPair) {
+            $handType = 1;
+            $usedCard = array_keys($rankCounts, 2);
+            $cards = array_filter($cards, function ($card) use ($usedCard) {
+                return $card->rank != $usedCard[0];
+            });
+            $possibleKickers = array_column($cards, 'rank');
+            rsort($possibleKickers);
+            $kickers = $possibleKickers[0] + $possibleKickers[1] + $possibleKickers[2];
+            $handValue = array_sum($usedCard) * 2;
 
-        return $handValues;
-
-    }
-
-    private static function isStraight($arr)
-    {
-        sort($arr);
-        for ($i = 0; $i < count($arr) - 4; $i++) {
-            if ($arr[$i]->rank + 1 == $arr[$i + 1]->rank && $arr[$i]->rank + 2 == $arr[$i + 2]->rank && $arr[$i]->rank + 3 == $arr[$i + 3]->rank && $arr[$i]->rank + 4 == $arr[$i + 4]->rank)
-                return array($arr[$i], $arr[$i + 1], $arr[$i + 2], $arr[$i + 3], $arr[$i + 4]);
-        }
-
-        for ($i = 0; $i < count($arr); $i++) {
-            if ($arr[$i]->rank == 14) {
-                $arr[$i]->rank = 1;
-            }
-        }
-
-        sort($arr);
-        for ($i = 0; $i < count($arr) - 4; $i++) {
-            if ($arr[$i]->rank + 1 == $arr[$i + 1]->rank && $arr[$i]->rank + 2 == $arr[$i + 2]->rank && $arr[$i]->rank + 3 == $arr[$i + 3]->rank && $arr[$i]->rank + 4 == $arr[$i + 4]->rank)
-                return array($arr[$i], $arr[$i + 1], $arr[$i + 2], $arr[$i + 3], $arr[$i + 4]);
-        }
-
-        return null;
-    }
-
-    private static function isStraightFlush($cards, $royalFlush)
-    {
-        $cards_copy = $cards;
-        if (!$royalFlush) {
-            for ($i = 0; $i < count($cards_copy); $i++) {
-                if ($cards_copy[$i]->rank == 14) {
-                    $cards_copy[$i]->rank = 1;
-                }
-            }
-        }
-
-        $sameSuitCards = self::findLargestSameSuit($cards_copy);
-        //if($sameSuitCards !== null) echo implode(" " ,array_column($sameSuitCards, 'rank')) . " ";
-        if ($sameSuitCards && self::areConsecutive($sameSuitCards)) {
-            if ($royalFlush) {
-                return (min(array_column($sameSuitCards, 'rank')) == 10) ? $sameSuitCards : null;
-            } else {
-                return $sameSuitCards;
-            }
         } else {
-            return null;
+            $handValue = max(array_column($cards, 'rank'));
+
         }
+        //print_r($kickers);
+
+        return array(
+            "strength" => $handType,
+            "cardValue" => $handValue,
+            "kickerValue" => $kickers
+        );
     }
 
+    private static function isStraight($rankCounts)
+    {
+        $ranks = array_keys($rankCounts);
+        sort($ranks);
+        for ($i = 0; $i <= count($ranks) - 5; $i++) {
+            if ($ranks[$i + 4] - $ranks[$i] == 4) {
+                return array($ranks[$i + 4], $ranks[$i + 3], $ranks[$i + 2], $ranks[$i + 1], $ranks[$i]);
+            }
+        }
+        // Check for Ace-low straight
+        if (in_array(14, $ranks) && in_array(2, $ranks) && in_array(3, $ranks) && in_array(4, $ranks) && in_array(5, $ranks)) {
+            return array(15);
+        }
+        return false;
+    }
 
     //returns index of the winner
     public static function winnerHands($players)
@@ -182,98 +177,9 @@ class HandEvaluator
         }
     }
 
-    private static function findLargestRepeatingElement($arr, $numOccurrencies)
-    {
-        $count = array_count_values($arr);
-        $largestRepeatingElement = null;
-
-        foreach ($count as $element => $occurrencies) {
-            if ($largestRepeatingElement === null || $element > $largestRepeatingElement) {
-                if ($occurrencies == $numOccurrencies) {
-                    $largestRepeatingElement = $element;
-                }
-            }
-        }
-
-        return $largestRepeatingElement;
-    }
-
-    private static function findNLargestRepeatingElements($arr, $numOccurrencesPerElement, $numElements)
-    {
-        $count = array_count_values($arr);
-        arsort($count);
-
-        $repeatingElements = [];
-        foreach ($count as $element => $occurrences) {
-            if ($occurrences == $numOccurrencesPerElement) {
-                $repeatingElements[] = $element;
-
-                if (count($repeatingElements) === $numElements) {
-                    return $repeatingElements;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static function findExclusiveLargestElement($arr, $values)
-    {
-        $filteredNumbers = array_diff($arr, $values);
-
-        if (empty($filteredNumbers)) {
-            return null;
-        }
-
-        $largestNumber = max($filteredNumbers);
-
-        return $largestNumber;
-    }
-
-    private static function findLargestSameSuit($cards)
-    {
-        $groupedCards = [];
-        foreach ($cards as $card) {
-            $suit = $card->suit;
-            $groupedCards[$suit][] = $card;
-        }
-
-        $filteredCards = array_filter($groupedCards, function ($arr) {
-            return count($arr) == 5;
-        });
-
-        if (empty($filteredCards)) {
-            return null;
-        }
-
-        foreach ($filteredCards as &$cards) {
-            usort($cards, function ($a, $b) {
-                return $b->rank - $a->rank;
-            });
-        }
-
-        uasort($filteredCards, function ($a, $b) {
-            return reset($b)->rank - reset($a)->rank;
-        });
-
-        $result = [];
-        foreach ($filteredCards as $cards) {
-            $result = array_merge($result, array_slice($cards, 0, 5 - count($result)));
-            if (count($result) >= 5) {
-                break;
-            }
-        }
-
-        return $result;
-    }
-
-    private static function areConsecutive($arr) {
-        sort($arr);
-        for ($i = 0; $i < count($arr) - 4; $i++) {
-            if ($arr[$i]->rank + 1 == $arr[$i + 1]->rank && $arr[$i]->rank + 2 == $arr[$i + 2]->rank && $arr[$i]->rank + 3 == $arr[$i + 3]->rank && $arr[$i]->rank + 4 == $arr[$i + 4]->rank)
-                return true;
-        }
-        return false;
-    }
-
 }
+
+
+
+
 ?>
