@@ -1,5 +1,6 @@
 <?php
 namespace Gruia\Poker;
+
 class Player
 {
 
@@ -13,7 +14,8 @@ class Player
         $this->hand = new Hand();
     }
 
-    public function getHand(){
+    public function getHand()
+    {
         return $this->hand;
     }
 

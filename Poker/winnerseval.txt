@@ -1,0 +1,41 @@
+for ($i = 0; $i < count($players); $i++) {
+            $players[$i]->getHand()->checkHand($tableCards);
+        }
+        $winners = HandEvaluator::winnerHands($players);
+        $winners = implode(",", $winners);
+        $winners = explode(",", $winners);
+        for ($i = 0; $i < count($winners); $i++) {
+            $ind = $winners[$i];
+            $players[$ind]->getHand()->setWinner(true);
+        }
+
+
+
+
+
+
+
+
+
+ <!--<h3>
+                        <?php
+
+                        $playerHandVals = $players[$i]->getHand()->getHandVals();
+                        echo "Hand Type: " . Hand::getHandType($playerHandVals['strength']);
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo "Card Value: " . $playerHandVals['cardValue'];
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo "Kicker: " . $playerHandVals['kickerValue'];
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo ($players[$i]->getHand()->getIfWinner()) ? "Winner" : "";
+                        ?>
+                    </h3>-->

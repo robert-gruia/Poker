@@ -1,175 +1,74 @@
-<?php namespace Gruia\Poker; ?>
+<!-- Login Page -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=§, initial-scale=1.0">
-    <title>Poker Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="Styles/indexStyle.css">
+    <link rel="icon" href="../Images/Icon.ico">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <title>Login</title>
 </head>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #35654d;
-        align-items: center;
-        justify-content: center;
-    }
 
-    .table {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px;
-    }
-
-    .deck {
-        margin-right: 20px;
-    }
-
-    .card img {
-        width: 160px;
-        height: 240px;
-        margin-right: 5px;
-    }
-
-    .deck img {
-        padding-right: 20px;
-        width: 160px;
-        height: 240px;
-    }
-
-    .players {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 20px;
-    }
-
-    .player {
-        text-align: center;
-    }
-
-    .player h2 {
-        margin-bottom: 10px;
-    }
-
-    .cards {
-        display: flex;
-        justify-content: center;
-    }
-
-    .card img {
-        width: 160px;
-        height: 240px;
-        margin-right: 5px;
-    }
-
-    html,
-    body,
-    .table,
-    .players {
-        height: 100%;
-    }
-</style>
 
 <body>
-    <?php
-    require_once("card.php");
-    require_once("player.php");
-    require_once("deck.php");
-    require_once("hand.php");
-    require_once("handEvaluator.php");
-    //deck creation
-    $deck = Deck::createDoubleDeck();
-    $deck->shuffle();
-    //card distribution to players
-    $tableCards = array();
-    for ($i = 0; $i < 5; $i++) {
-        array_push($tableCards, $deck->takeCard());
-    }
-    $players = array(new Player("Player 1"), new Player("Player 2"), new Player("Player 3"), new Player("Player 4"));
-    for ($i = 0; $i < 2; $i++) {
-        for ($j = 0; $j < count($players); $j++) {
-            $players[$j]->getHand()->addCard($deck->takeCard());
-        }
-    }
-    for ($i = 0; $i < count($players); $i++) {
-        $players[$i]->getHand()->checkHand($tableCards);
-    }
-    $winners = HandEvaluator::winnerHands($players);
-    $winners = implode(",", $winners);
-    $winners = explode(",", $winners); 
-    for ($i = 0; $i < count($winners); $i++) {
-        $ind = $winners[$i];
-        $players[$ind]->getHand()->setWinner(true);
-    }
 
-    ?>
-    <div class="game">
+    <div class="login-box">
+        <form method="post" action="<?php echo $_SERVER["PHP_SELF"]; ?>" id="dataForm">
+            <div class="main">
+                <p class="sign" align="center">Sign in</p>
+                <form class="form1">
+                    <input class="un " type="text" name="username" id="username" align="center"
+                        placeholder="Username/Email">
+                    <input class="pass" type="password" name="password" id="password" align="center"
+                        placeholder="Password">
+                    <a class="submit" align="center">Sign in</a>
 
-        <div class="table">
-            <div class="deck">
-                <img src=<?php echo $deck->cardBack(); ?>>
-            </div>
-            <?php
-            for ($i = 0; $i < 5; $i++) {
-                $card = $tableCards[$i];
-                ?>
-                <div class="card">
-                    <img src=<?= $card->img_Path ?> alt="">
-                </div>
-                <?php
-            }
-            ?>
-        </div>
-        <div class="players">
-            <?php
-            for ($i = 0; $i < 4; $i++) {
-                ?>
-                <div class="player">
-                    <h2>
-                        <?= $players[$i]->name ?>
-                    </h2>
-                    <div class="cards">
+
+
+                    <p>
                         <?php
-                        for ($j = 0; $j < 2; $j++) {
-                            $card = $players[$i]->getHand()->getCards()[$j];
-                            ?>
-                            <div class="card">
-                                <img src=<?= $card->img_Path ?> alt="">
-                            </div>
-                            <?php
+                        $ROOT = getcwd();
+                        // Verifica se il form è stato inviato
+                        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+                            // Recupera i dati dal form
+                            $email_username = $_POST["username"];
+                            $password = $_POST["password"];
+                            $message = "";
+                            $passMd5 = md5($password);
+
+                            // Connessione al database
+                            $servername = "localhost";
+                            $username = "root";
+                            $password = "";
+                            $dbname = "poker";
+                            $conn = new mysqli($servername, $username, $password, $dbname);
+
+                            if ($conn->connect_error) {
+                                die("Connessione fallita: " . $conn->connect_error);
+                            }
+
+                            $sql = "SELECT username FROM utenti WHERE email = '$email_username' OR username = '$email_username' AND password = '$passMd5'";
+                            $result = $conn->query($sql);
+                            $row = $result->fetch_assoc();
+                            if ($result->num_rows > 0) {
+                                //$message = "Dati inseriti con successo nel database!";
+                                $userID = $conn->query("SELECT ID FROM utenti WHERE username = '$email_username' OR email = '$email_username'")->fetch_assoc()["ID"];
+                                $_SESSION["username"] = $row["username"];
+                                header("Location: poker.php");
+                            } else {
+                                echo "Login Error";
+                            }
+                            $conn->close();
                         }
                         ?>
-                    </div>
-                    <h3>
-                        <?php
-                           
-                            $playerHandVals = $players[$i]->getHand()->getHandVals();
-                            echo "Hand Type: ". Hand::getHandType($playerHandVals['strength']);
-                        ?>
-                    </h3>
-                    <h3>
-                        <?php
-                        echo "Card Value: ". $playerHandVals['cardValue'];
-                        ?>
-                    </h3>
-                    <h3>
-                        <?php
-                        echo "Kicker: ". $playerHandVals['kickerValue'];
-                        ?>
-                    </h3>
-                    <h3>
-                        <?php
-                        echo ($players[$i]->getHand()->getIfWinner()) ? "Winner" : "";
-                        ?>
-                    </h3>
-                </div>
-                <?php
-            }
-            ?>
-
-        </div>
+                    </p>
+                    <p class="register" align="center"><a href="register.php">Register</p>
+            </div>
+        </form>
     </div>
 
 </body>

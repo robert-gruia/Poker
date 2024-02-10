@@ -1,0 +1,91 @@
+/* registerStyle.css */
+
+/* Poker-specific styles for register page */
+.login-box {
+    background-color: rgba(255, 255, 255, 0.8);
+    /* White with transparency */
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    /* Soft shadow effect */
+    width: 400px;
+    margin: 0 auto;
+    margin-top: 50px;
+}
+
+.login-box h2 {
+    color: #1f4068;
+    /* Dark blue */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.user-box input[type="text"],
+.user-box input[type="password"] {
+    width: 100%;
+    padding: 10px 0;
+    margin: 10px 0;
+    border: none;
+    border-bottom: 2px solid #1f4068;
+    /* Dark blue underline */
+    outline: none;
+    background: transparent;
+    color: #1f4068;
+    /* Dark blue text color */
+    font-size: 16px;
+}
+
+.user-box label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    transition: 0.5s;
+    color: #1f4068;
+    /* Dark blue label color */
+}
+
+.user-box input:focus~label,
+.user-box input:valid~label {
+    top: -20px;
+    left: 0;
+    color: #4CAF50;
+    /* Green label color */
+}
+
+.button-form {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#submit {
+    display: inline-block;
+    background: #1f4068;
+    /* Dark blue */
+    color: #ffffff;
+    /* White */
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    text-decoration: none;
+}
+
+#submit:hover {
+    background: #4CAF50;
+    /* Green on hover */
+}
+
+#register a {
+    color: #1f4068;
+    /* Dark blue */
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+#register a:hover {
+    color: #4CAF50;
+    /* Green on hover */
+}
