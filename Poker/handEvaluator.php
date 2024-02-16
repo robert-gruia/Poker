@@ -1,6 +1,4 @@
 <?php
-namespace Gruia\Poker;
-
 error_reporting(E_ALL & ~E_WARNING);
 
 class HandEvaluator
@@ -32,8 +30,8 @@ class HandEvaluator
         $rankCountValues = array_count_values($rankCounts);
         $isFourOfAKind = isset($rankCountValues[4]);
         $isThreeOfAKind = isset($rankCountValues[3]);
-        $isPair = isset($rankCountValues[2]);
-        $isTwoPair = isset($rankCountValues[2]) && array_keys($rankCountValues, 2)[0] >= 2;
+        $isPair = isset($rankCountValues[2]) && count(array_keys($rankCountValues, 2)) == 1;
+        $isTwoPair = isset($rankCountValues[2]) && count(array_keys($rankCountValues, 2)) >= 2;
         $isFullHouse = $isThreeOfAKind && $isPair;
 
         // Determine hand type

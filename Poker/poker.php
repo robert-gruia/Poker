@@ -1,7 +1,6 @@
 <?php
-namespace Gruia\Poker;
+?>
 
-use mysqli; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,99 +8,43 @@ use mysqli; ?>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=§, initial-scale=1.0">
-    <script src="Scripts/cardsDistribution.js" defer></script>
+    <link rel="stylesheet" href="Styles/pokerStyle.css">
+    <script src="Scripts/flipCards.js" defer></script>
     <title>Poker Game</title>
 </head>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #35654d;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .table {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px;
-    }
-
-    .deck {
-        margin-right: 20px;
-    }
-
-    .card img {
-        width: 160px;
-        height: 240px;
-        margin-right: 5px;
-    }
-
-    .deck img {
-        padding-right: 20px;
-        width: 160px;
-        height: 240px;
-    }
-
-    .players {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 20px;
-    }
-
-    .player {
-        text-align: center;
-    }
-
-    .player h2 {
-        margin-bottom: 10px;
-    }
-
-    .cards {
-        display: flex;
-        justify-content: center;
-    }
-
-    .card img {
-        width: 160px;
-        height: 240px;
-        margin-right: 5px;
-    }
-
-    html,
-    body,
-    .table,
-    .players {
-        height: 100%;
-    }
-</style>
 
 <body>
     <?php
     session_start();
-    require_once("card.php");
-    require_once("player.php");
-    require_once("deck.php");
-    require_once("hand.php");
-    require_once("handEvaluator.php");
+    require_once "card.php";
+    require_once "player.php";
+    require_once "deck.php";
+    require_once "hand.php";
+    require_once "handEvaluator.php";
 
     //player data
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "poker";
-    $conn = new mysqli($servername, $username, $password, $dbname);
+    $host = 'localhost';
+    $db = 'poker';
+    $user = 'root';
+    $pass = '';
+    $charset = 'utf8mb4';
 
-    if ($conn->connect_error) {
-        die("Connessione fallita: " . $conn->connect_error);
-    }
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    $opt = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ];
+    $pdo = new PDO($dsn, $user, $pass, $opt);
 
     $user = $_SESSION["username"];
-    $sql = "SELECT * FROM utenti WHERE username = '$user'";
-    $result = $conn->query($sql);
-    $row = $result->fetch_assoc();
+    $sql = "SELECT * FROM utenti WHERE username = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$user]);
+    $row = $stmt->fetch();
+
     print_r($row);
-    if ($result->num_rows > 0) {
+    if ($row !== null /*&& $row->num_rows > 0*/) {
         $player = new Player($row["username"], $row["balance"]);
         //deck creation
         $deck = Deck::createDoubleDeck();
@@ -109,7 +52,7 @@ use mysqli; ?>
         //card distribution to players
         $tableCards = array();
         $players = array($player, new Player("Bot 1"), new Player("Bot 2"));
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             array_push($tableCards, $deck->takeCard());
         }
         for ($i = 0; $i < 2; $i++) {
@@ -121,67 +64,61 @@ use mysqli; ?>
     } else {
         header("Location: index.php");
     }
-    $conn->close();
-
-
     ?>
     <div class="game">
-
         <div class="table">
             <div class="deck">
-                <img src=<?php echo $deck->cardBack(); ?>>
+                <img src="<?= $deck->cardBack(); ?>">
             </div>
             <?php
             for ($i = 0; $i < count($tableCards); $i++) {
-                $card = $tableCards[$i];
-                ?>
-                <div class="card">
-                    <img src=<?= $card->img_Path ?> alt="">
-                </div>
-                <?php
-            }
-            ?>
+                if ($i < count($tableCards) - 2) { ?>
+                    <div class="card">
+                        <img src="<?= $tableCards[$i]->img_Path ?>" alt="">
+                    </div>
+                <?php } 
+                else { ?>
+                    <div class="card flippable-table">
+                        <img src="<?= $tableCards[$i]->cardBack_Path ?>" alt="" data-img="'<?= $tableCards[$i]->img_Path ?>'">
+                    </div>
+                    <?php } ?>
+            <?php } ?>
         </div>
         <div class="players">
-            <?php
-            for ($i = 0; $i < count($players); $i++) {
-                ?>
+            <?php foreach ($players as $player) { ?>
                 <div class="player">
                     <h2>
-                        <?= $players[$i]->name ?>
+                        <?= $player->name ?>
                     </h2>
                     <div class="cards">
-                        <?php
-                        for ($j = 0; $j < 2; $j++) {
-                            $card = $players[$i]->getHand()->getCards()[$j];
-                            ?>
-                            <div class="card">
-                                <?php
-                                if ($players[$i]->name == $_SESSION["username"]) {
+                        <?php foreach ($player->getHand()->getCards() as $card) { ?>
+                            <?php
+                                if ($player->name == $_SESSION["username"]) {
                                     ?>
-                                    <img src=<?= $card->img_Path ?> alt="">
+                                    <div class="card">
+                                    <div class="card-face front">
+                                        <img src=<?= $card->img_Path ?> alt="">
+                                    </div>
+                                    </div>
                                     <?php
                                 } else {
                                     ?>
-                                    <img src=<?= $card->cardBack_Path ?> alt="">
+                                    <div class="card flippable" data-img="<?= $card->img_Path ?>">
+                                    <div class="card-face back">
+                                        <img src=<?= $card->cardBack_Path ?> alt="" id="back">
+                                    </div>
+                                </div>
                                 <?php } ?>
-                            </div>
-                            <?php
-                        }
-                        ?>
+                        <?php } ?>
                     </div>
-                    <h3>
-                        <?php
-                        echo "Balance: " . $players[$i]->money;
-                        ?>
-
+                    <h3>Balance:
+                        <?= $player->money ?>
                     </h3>
-
                 </div>
-                <?php
-            }
-            ?>
-
+            <?php } ?>
+        </div>
+        <div class="buttons">
+            <button onclick="flipPlayers()">Flip</button>
         </div>
     </div>
 

@@ -1,5 +1,5 @@
 <?php
-namespace Gruia\Poker;
+require_once "hand.php";
 
 class Player
 {

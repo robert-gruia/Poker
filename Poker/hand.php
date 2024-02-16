@@ -1,6 +1,6 @@
 <?php
-namespace Gruia\Poker;
-
+ require_once "card.php";
+ require_once "handEvaluator.php";
 class Hand{
     private $cards = array();
     private $cardLimit;
@@ -28,7 +28,7 @@ class Hand{
     public function getCards(){
         return $this->cards;
     }
-
+    
     public function addCard($card){
         array_push($this->cards, $card);
     }

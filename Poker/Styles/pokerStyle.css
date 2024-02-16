@@ -1,0 +1,80 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #35654d;
+    align-items: center;
+    justify-content: center;
+}
+
+.table {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+}
+
+.deck {
+    margin-right: 20px;
+}
+
+.card img {
+    width: 160px;
+    height: 240px;
+    margin-right: 5px;
+}
+
+.deck img {
+    padding-right: 20px;
+    width: 160px;
+    height: 240px;
+}
+
+.players {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.player {
+    text-align: center;
+}
+
+.player h2 {
+    margin-bottom: 10px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+}
+
+.card img {
+    width: 160px;
+    height: 240px;
+    margin-right: 5px;
+}
+
+html,
+body,
+.table,
+.players {
+    height: 100%;
+}
+
+.card {
+    transform-style: preserve-3d;
+    transition: transform 1s;
+}
+
+.card.is-flipped {
+    transform: rotateY(180deg);
+}
+
+
+.card-face.front {
+    z-index: 2;
+}
+
+.card-face.back {
+    transform: rotateY(180deg);
+}
+
