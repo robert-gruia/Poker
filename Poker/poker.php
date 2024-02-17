@@ -9,6 +9,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=§, initial-scale=1.0">
     <link rel="stylesheet" href="Styles/pokerStyle.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="Scripts/flipCards.js" defer></script>
     <title>Poker Game</title>
 </head>
@@ -42,8 +43,6 @@
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$user]);
     $row = $stmt->fetch();
-
-    print_r($row);
     if ($row !== null /*&& $row->num_rows > 0*/) {
         $player = new Player($row["username"], $row["balance"]);
         //deck creation
@@ -51,7 +50,7 @@
         $deck->shuffle();
         //card distribution to players
         $tableCards = array();
-        $players = array($player, new Player("Bot 1"), new Player("Bot 2"));
+        $players = array($player, new Player("Bot 1"), new Player("Bot 2"), new Player("Bot 3"));
         for ($i = 0; $i < 5; $i++) {
             array_push($tableCards, $deck->takeCard());
         }
@@ -71,17 +70,10 @@
                 <img src="<?= $deck->cardBack(); ?>">
             </div>
             <?php
-            for ($i = 0; $i < count($tableCards); $i++) {
-                if ($i < count($tableCards) - 2) { ?>
-                    <div class="card">
-                        <img src="<?= $tableCards[$i]->img_Path ?>" alt="">
+            for ($i = 0; $i < count($tableCards); $i++) { ?>
+                <div class="card flippable-table" data-img="<?= $tableCards[$i]->img_Path ?>">
+                        <img src="<?= $tableCards[$i]->cardBack_Path ?>" alt="">
                     </div>
-                <?php } 
-                else { ?>
-                    <div class="card flippable-table">
-                        <img src="<?= $tableCards[$i]->cardBack_Path ?>" alt="" data-img="'<?= $tableCards[$i]->img_Path ?>'">
-                    </div>
-                    <?php } ?>
             <?php } ?>
         </div>
         <div class="players">
@@ -111,14 +103,15 @@
                                 <?php } ?>
                         <?php } ?>
                     </div>
-                    <h3>Balance:
-                        <?= $player->money ?>
-                    </h3>
+                    <?php if ($player->name == $_SESSION["username"]) {?>
+                        <div id="balance">Balance: <?= $row['balance']?></div>
+                    <?php }?>
                 </div>
             <?php } ?>
         </div>
-        <div class="buttons">
-            <button onclick="flipPlayers()">Flip</button>
+        <div class="bet">
+            <input type="text" id="betValue" />
+            <button id="submitBet">Bet</button>
         </div>
     </div>
 
