@@ -1,0 +1,30 @@
+<?php
+    $host = 'localhost';
+    $db = 'poker';
+    $user = 'root';
+    $pass = '';
+    $charset = 'utf8mb4';
+
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    $opt = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
+    $pdo = new PDO($dsn, $user, $pass, $opt);
+
+    session_start();
+    $username = $_SESSION['username'];
+    $potValue = $_POST['pot'];
+
+    $sql = "UPDATE utenti SET denaro = denaro + ? WHERE username = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$potValue, $username]);
+
+    $sql = "SELECT denaro FROM utenti WHERE username = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$username]);
+    $newBalance = $stmt->fetch()['denaro'];
+
+    echo $newBalance;
+?>

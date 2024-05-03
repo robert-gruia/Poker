@@ -15,8 +15,8 @@ class HandEvaluator
         $suitCounts = self::getCardCounts($cards, 'suit');
 
         $handType = self::getHandType($rankCounts, $suitCounts);
-        $handValue = self::getHandValue($handType, $cards, $rankCounts, $suitCounts);
-        $kickers = self::getKickers($handType, $cards, $rankCounts);
+        $handValue = self::getHandValue($handType, $cards, $rankCounts);
+        $kickers = self::getKickers($handType, $cards);
 
         return array(
             "strength" => $handType,
@@ -82,7 +82,7 @@ class HandEvaluator
         return in_array(14, $ranks) && in_array(2, $ranks) && in_array(3, $ranks) && in_array(4, $ranks) && in_array(5, $ranks);
     }
 
-    private static function getHandValue($handType, $cards, $rankCounts, $suitCounts)
+    private static function getHandValue($handType, $cards, $rankCounts)
     {
         switch ($handType) {
             case 8: // Straight flush
@@ -104,7 +104,7 @@ class HandEvaluator
         }
     }
 
-    private static function getKickers($handType, $cards, $rankCounts)
+    private static function getKickers($handType, $cards)
     {
         $kickers = array_column($cards, 'rank');
         rsort($kickers);
@@ -167,7 +167,6 @@ class HandEvaluator
             }
         }
     }
-
 }
 
 

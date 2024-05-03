@@ -89,6 +89,9 @@
                 </div>
             <?php } ?>
         </div>
+        <div class="pot">
+            <h2>Pot: 0</h2>
+        </div>
         <div class="players">
             <?php foreach ($players as $player) { ?>
                 <div class="player">
@@ -141,11 +144,19 @@
                     <h3>
                         <?php
                         echo ($player->getHand()->getIfWinner()) ? "Winner" : "";
-                        if($player->getHand()->getIfWinner()){?>
-                        <script>
-                            document.currentScript.closest('.handValue').style.color = 'goldenrod';
-                        </script>    
-
+                        if ($player->getHand()->getIfWinner()) { ?>
+                            <script>
+                                document.currentScript.closest('.handValue').style.color = 'goldenrod';
+                            </script>
+                            <?php
+                            if ($player->name == $_SESSION["username"]) {
+                                ?>
+                                <script>
+                                    setWinner(<?= count($winners) ?>);
+                                </script>
+                                <?php
+                            }
+                            ?>
                         <?php
                         }
                         ?>
@@ -153,7 +164,7 @@
                 </div>
 
             <?php } ?>
-        </div>
+        </div>--
         <div class="bet">
             <input type="text" id="betValue" />
             <button id="submitBet">Bet</button>
