@@ -44,7 +44,7 @@
     $stmt->execute([$user]);
     $row = $stmt->fetch();
     if ($row !== null /*&& $row->num_rows > 0*/) {
-        $player = new Player($row["username"], $row["balance"]);
+        $player = new Player($row["username"], $row["denaro"]);
         //deck creation
         $deck = Deck::createDoubleDeck();
         $deck->shuffle();
@@ -60,6 +60,17 @@
             }
         }
 
+        for ($i = 0; $i < count($players); $i++) {
+            $players[$i]->getHand()->checkHand($tableCards);
+        }
+        $winners = HandEvaluator::winnerHands($players);
+        $winners = implode(",", $winners);
+        $winners = explode(",", $winners);
+        for ($i = 0; $i < count($winners); $i++) {
+            $ind = $winners[$i];
+            $players[$ind]->getHand()->setWinner(true);
+        }
+
     } else {
         header("Location: index.php");
     }
@@ -72,8 +83,10 @@
             <?php
             for ($i = 0; $i < count($tableCards); $i++) { ?>
                 <div class="card flippable-table" data-img="<?= $tableCards[$i]->img_Path ?>">
-                        <img src="<?= $tableCards[$i]->cardBack_Path ?>" alt="">
+                    <div class="card-face back">
+                        <img src=<?= $tableCards[$i]->cardBack_Path ?> alt="" id="back">
                     </div>
+                </div>
             <?php } ?>
         </div>
         <div class="players">
@@ -85,33 +98,67 @@
                     <div class="cards">
                         <?php foreach ($player->getHand()->getCards() as $card) { ?>
                             <?php
-                                if ($player->name == $_SESSION["username"]) {
-                                    ?>
-                                    <div class="card">
+                            if ($player->name == $_SESSION["username"]) {
+                                ?>
+                                <div class="card">
                                     <div class="card-face front">
                                         <img src=<?= $card->img_Path ?> alt="">
                                     </div>
-                                    </div>
-                                    <?php
-                                } else {
-                                    ?>
-                                    <div class="card flippable" data-img="<?= $card->img_Path ?>">
+                                </div>
+                                <?php
+                            } else {
+                                ?>
+                                <div class="card flippable" data-img="<?= $card->img_Path ?>">
                                     <div class="card-face back">
                                         <img src=<?= $card->cardBack_Path ?> alt="" id="back">
                                     </div>
                                 </div>
-                                <?php } ?>
+                            <?php } ?>
                         <?php } ?>
                     </div>
-                    <?php if ($player->name == $_SESSION["username"]) {?>
-                        <div id="balance">Balance: <?= $row['balance']?></div>
-                    <?php }?>
+                    <?php if ($player->name == $_SESSION["username"]) { ?>
+                        <div id="balance">Balance: <?= $player->money ?></div>
+                    <?php } ?>
                 </div>
+                <div class="handValue" style="display: none;">
+                    <h3>
+                        <?php
+
+                        $playerHandVals = $player->getHand()->getHandVals();
+                        echo "Hand Type: " . Hand::getHandType($playerHandVals['strength']);
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo "Card Value: " . $playerHandVals['cardValue'];
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo "Kicker: " . $playerHandVals['kickerValue'];
+                        ?>
+                    </h3>
+                    <h3>
+                        <?php
+                        echo ($player->getHand()->getIfWinner()) ? "Winner" : "";
+                        if($player->getHand()->getIfWinner()){?>
+                        <script>
+                            document.currentScript.closest('.handValue').style.color = 'goldenrod';
+                        </script>    
+
+                        <?php
+                        }
+                        ?>
+                    </h3>
+                </div>
+
             <?php } ?>
         </div>
         <div class="bet">
             <input type="text" id="betValue" />
             <button id="submitBet">Bet</button>
+            <br>
+            <p class='errorBet'></p>
         </div>
     </div>
 

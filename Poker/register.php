@@ -36,7 +36,7 @@
 
             $hash = md5($password);
 
-            $sql = "INSERT INTO utenti (username, email ,password, balance) VALUES (?, ?, ?, 10000)";
+            $sql = "INSERT INTO utenti (username, email ,password, denaro) VALUES (?, ?, ?, 10000)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$username, $email, $hash]);
             $pdo = null;
@@ -94,8 +94,8 @@
             </svg>
         </div>
 
-        <button class="button-submit">Sign In</button>
-        <p class="p">Don't have an account? <span class="span"><a href="register.php">Sign Up</a></span>
+        <button class="button-submit">Sign Up</button>
+        <p class="p">Already have an account? <span class="span"><a href="index.php">Sign In</a></span>
 
     </form>
 

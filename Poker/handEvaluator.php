@@ -11,104 +11,12 @@ class HandEvaluator
             return $b->rank - $a->rank;
         });
 
-        $rankCounts = array();
-        $suitCounts = array();
-        foreach ($cards as $card) {
-            if (!isset($rankCounts[$card->rank])) {
-                $rankCounts[$card->rank] = 0;
-            }
-            if (!isset($suitCounts[$card->suit])) {
-                $suitCounts[$card->suit] = 0;
-            }
-            $rankCounts[$card->rank]++;
-            $suitCounts[$card->suit]++;
-        }
+        $rankCounts = self::getCardCounts($cards, 'rank');
+        $suitCounts = self::getCardCounts($cards, 'suit');
 
-        // Check for poker hand types
-        $isFlush = max($suitCounts) >= 5;
-        $isStraight = self::isStraight($rankCounts) !== false;
-        $rankCountValues = array_count_values($rankCounts);
-        $isFourOfAKind = isset($rankCountValues[4]);
-        $isThreeOfAKind = isset($rankCountValues[3]);
-        $isPair = isset($rankCountValues[2]) && count(array_keys($rankCountValues, 2)) == 1;
-        $isTwoPair = isset($rankCountValues[2]) && count(array_keys($rankCountValues, 2)) >= 2;
-        $isFullHouse = $isThreeOfAKind && $isPair;
-
-        // Determine hand type
-        $handType = 0;
-        $handValue = 0;
-        $kickers = 0;
-        //four of a kind
-        if ($isFourOfAKind) {
-            $handType = 7;
-            $usedCard = array_keys($rankCounts, 4);
-            $cards = array_filter($cards, function ($card) use ($usedCard) {
-                return $card->rank != $usedCard[0];
-            });
-            $possibleKickers = array_column($cards, 'rank');
-            rsort($possibleKickers);
-            $kickers = $possibleKickers[0];
-            print_r($usedCard);
-            $handValue = array_sum($usedCard) * 4;
-            //full house
-        } elseif ($isFullHouse) {
-            $handType = 6;
-            $handValue = array_sum(array_keys($rankCounts, 3)) * 3 + array_sum(array_keys($rankCounts, 2)) * 2;
-            //straight flush / royal flush
-        } elseif ($isFlush && $isStraight) {
-            $handType = $handValue == 14 ? 9 : 8;
-            $handValue = array_sum(self::isStraight($rankCounts));
-            //flush
-        } elseif ($isFlush) {
-            $handType = 5;
-            $suit = array_keys($suitCounts, max($suitCounts))[0];
-            $suitsArr = array_filter($cards, function ($card) use ($suit) {
-                return $card->suit == $suit;
-            });
-            rsort($suitsArr);
-            $handValue = $suitsArr[0] + $suitsArr[1] + $suitsArr[2] + $suitsArr[3] + $suitsArr[4];
-            //straight
-        } elseif ($isStraight) {
-            $handType = 4;
-            $handValue = array_sum(self::isStraight($rankCounts));
-            //three of a kind
-        } elseif ($isThreeOfAKind) {
-            $handType = 3;
-            $usedCard = array_keys($rankCounts, 3);
-            $cards = array_filter($cards, function ($card) use ($usedCard) {
-                return $card->rank != $usedCard[0];
-            });
-            $possibleKickers = array_column($cards, 'rank');
-            rsort($possibleKickers);
-            $kickers = $possibleKickers[0] + $possibleKickers[1];
-            $handValue = array_sum($usedCard) * 3;
-            //two pair    
-        } elseif ($isTwoPair) {
-            $handType = 2;
-            $usedCards = array_keys($rankCounts, 2);
-            $cards = array_filter($cards, function ($card) use ($usedCards) {
-                return array_search($card->rank, $usedCards) != false;
-            });
-            $possibleKickers = array_column($cards, 'rank');
-            $kickers = $possibleKickers[0];
-            $handValue = array_sum($usedCards) * 2;
-            //pair    
-        } elseif ($isPair) {
-            $handType = 1;
-            $usedCard = array_keys($rankCounts, 2);
-            $cards = array_filter($cards, function ($card) use ($usedCard) {
-                return $card->rank != $usedCard[0];
-            });
-            $possibleKickers = array_column($cards, 'rank');
-            rsort($possibleKickers);
-            $kickers = $possibleKickers[0] + $possibleKickers[1] + $possibleKickers[2];
-            $handValue = array_sum($usedCard) * 2;
-
-        } else {
-            $handValue = max(array_column($cards, 'rank'));
-
-        }
-        //print_r($kickers);
+        $handType = self::getHandType($rankCounts, $suitCounts);
+        $handValue = self::getHandValue($handType, $cards, $rankCounts, $suitCounts);
+        $kickers = self::getKickers($handType, $cards, $rankCounts);
 
         return array(
             "strength" => $handType,
@@ -117,20 +25,105 @@ class HandEvaluator
         );
     }
 
+    private static function getCardCounts($cards, $property)
+    {
+        $counts = array();
+        foreach ($cards as $card) {
+            if (!isset($counts[$card->$property])) {
+                $counts[$card->$property] = 0;
+            }
+            $counts[$card->$property]++;
+        }
+        return $counts;
+    }
+
+    private static function getHandType($rankCounts, $suitCounts)
+    {
+        $isFlush = max($suitCounts) >= 5;
+        $isStraight = self::isStraight($rankCounts) !== false;
+        $rankCountValues = array_count_values($rankCounts);
+        $isFourOfAKind = isset($rankCountValues[4]);
+        $isThreeOfAKind = isset($rankCountValues[3]);
+        $isPair = isset($rankCountValues[2]);
+        $isTwoPair = count(array_filter($rankCounts, function ($count) {
+            return $count >= 2; })) == 2;
+        $isFullHouse = $isThreeOfAKind && $isPair;
+
+        if ($isFlush && $isStraight) {
+            return 8; // Straight flush
+        } elseif ($isFourOfAKind) {
+            return 7; // Four of a kind
+        } elseif ($isFullHouse) {
+            return 6; // Full house
+        } elseif ($isFlush) {
+            return 5; // Flush
+        } elseif ($isStraight) {
+            return 4; // Straight
+        } elseif ($isThreeOfAKind) {
+            return 3; // Three of a kind
+        } elseif ($isTwoPair) {
+            return 2; // Two pair
+        } elseif ($isPair && !$isTwoPair) {
+            return 1; // One pair
+        } else {
+            return 0; // High card
+        }
+    }
+
     private static function isStraight($rankCounts)
     {
         $ranks = array_keys($rankCounts);
         sort($ranks);
         for ($i = 0; $i <= count($ranks) - 5; $i++) {
             if ($ranks[$i + 4] - $ranks[$i] == 4) {
-                return array($ranks[$i + 4], $ranks[$i + 3], $ranks[$i + 2], $ranks[$i + 1], $ranks[$i]);
+                return true;
             }
         }
-        // Check for Ace-low straight
-        if (in_array(14, $ranks) && in_array(2, $ranks) && in_array(3, $ranks) && in_array(4, $ranks) && in_array(5, $ranks)) {
-            return array(15);
+        return in_array(14, $ranks) && in_array(2, $ranks) && in_array(3, $ranks) && in_array(4, $ranks) && in_array(5, $ranks);
+    }
+
+    private static function getHandValue($handType, $cards, $rankCounts, $suitCounts)
+    {
+        switch ($handType) {
+            case 8: // Straight flush
+            case 4: // Straight
+                return array_sum(array_column($cards, 'rank'));
+            case 5: // Flush
+                return max(array_column($cards, 'rank'));
+            case 7: // Four of a kind
+            case 6: // Full house
+            case 3: // Three of a kind
+                return array_keys($rankCounts, max($rankCounts))[0];
+            case 2: // Two pair
+                $pairs = array_keys($rankCounts, 2);
+                return max($pairs);
+            case 1: // One pair
+                return array_keys($rankCounts, 2)[0];
+            default: // High card
+                return max(array_column($cards, 'rank'));
         }
-        return false;
+    }
+
+    private static function getKickers($handType, $cards, $rankCounts)
+    {
+        $kickers = array_column($cards, 'rank');
+        rsort($kickers);
+        switch ($handType) {
+            case 8: // Straight flush
+            case 5: // Flush
+            case 4: // Straight
+                return 0;
+            case 7: // Four of a kind
+            case 6: // Full house
+            case 3: // Three of a kind
+                return array_sum(array_slice($kickers, 1, 3));
+            case 2: // Two pair
+                return array_sum(array_slice($kickers, 2, 3));
+            case 1: // One pair
+                return array_sum(array_slice($kickers, 2, 4));
+            default: // High card
+                return array_sum(array_slice($kickers, 1, 4));
+        }
     }
 
     //returns index of the winner

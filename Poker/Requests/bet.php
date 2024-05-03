@@ -17,14 +17,14 @@
     $username = $_SESSION['username'];
     $betValue = $_POST['bet'];
 
-    $sql = "UPDATE utenti SET balance = balance - ? WHERE username = ?";
+    $sql = "UPDATE utenti SET denaro = denaro - ? WHERE username = ?";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$betValue, $username]);
 
-    $sql = "SELECT balance FROM utenti WHERE username = ?";
+    $sql = "SELECT denaro FROM utenti WHERE username = ?";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$username]);
-    $newBalance = $stmt->fetch()['balance'];
+    $newBalance = $stmt->fetch()['denaro'];
 
     echo $newBalance;
 ?>
